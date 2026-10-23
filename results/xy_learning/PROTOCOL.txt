@@ -1,0 +1,41 @@
+PLANAR RETURN: LEARNING PROTOCOL
+
+Task: q0=g=(0,0), v0=(1,0), w=(0,1), T=1, K=50.
+Objective: J=0.5 integral |u|^2 + K/2 (|q(1)-g|^2+|v(1)-w|^2). Terminal targets are soft.
+Analytic coefficients are derived from the terminal linear system in code/planar_steering.py. J*=2725/828; actual q*(1)=(13/138,25/276).
+Crossing times: 1/2 +/- sqrt(13)/10. The proved cost barrier is 1/20000.
+
+Reproduction (from package root):
+python code/xy_learning.py
+python code/xy_learning.py --summarize-only
+The first command trains all six models and produces results, validation, and figures. The second freshly reintegrates saved weights, checks saved paths and seeded initializations, and regenerates figures. The active source imports task data exclusively from code/planar_steering.py.
+
+Model classes and initialization:
+Position only: f(q)=V0+W2[tanh(W1 q+b1)-tanh(W1 Q0+b1)], with qdot=f(q), u=Df(q)f(q). Thus f(Q0)=V0 exactly. There are 40 trainable parameters.
+Tangent lift: qdot=v, vdot=W2 tanh(W1(q,v)+b1)+b2. There are 58 trainable parameters.
+Both use one hidden tanh layer of width8, independent float64 weights, and the common parameter box [-20,20]. This is not a parameter-count-matched comparison.
+Seeds:11,22,33. W1,b1 use Normal(0,0.08^2); W2 uses Normal(0,0.5^2); lifted output bias starts at zero. No reference trajectory, optimal coefficients, optimal cost, or barrier enter the training residual, Jacobian, or initialization.
+
+Fixed inherited optimization protocol:
+scipy.optimize.least_squares(method=trf,tr_solver=exact,x_scale=jac), ftol=xtol=1e-12, gtol=1e-10; complex-step Jacobian increment1e-25.
+Phase1:128 uniform RK4 steps, composite Simpson acceleration-energy quadrature, maximum1200 objective evaluations.
+Phase2:256 steps, maximum300 additional evaluations, starting from the first returned parameters. Early termination is allowed equally for both classes.
+All six runs use this same inherited protocol, with no seed selection, parameter tuning, or repeat training on this new task. Earlier tasks are not results for this task. This return task was selected for visibility of its analytic loop before training; there was one run per specified seed.
+
+Independent verification:
+DOP853 rtol=2e-11,atol=2e-12,max_step=1/128; repeated with rtol=2e-12,atol=2e-13. The true cost gap is computed from the nonnegative exact identity, and checked against J-J*. A further512-step RK4/Simpson calculation checks discretization. A central directional difference at1e-6 checks the complex-step Jacobian. Final weights, trajectories and initializations are independently read back and verified.
+Checkpoints: initial and every50 objective evaluations in phase1, choosing the best discretized objective seen so far; the final model returned by phase2 is added. Every plotted checkpoint is independently reintegrated with DOP853. There is no clipping or flooring of cost gaps.
+
+
+Results from independent integration:
+position seed 11: gap=0.157609135408962, evaluations=1500, status=0, elapsed=35.502s.
+position seed 22: gap=0.170312478344643, evaluations=1500, status=0, elapsed=37.023s.
+position seed 33: gap=0.166383478335423, evaluations=1500, status=0, elapsed=36.287s.
+lift seed 11: gap=7.16723535221841e-11, evaluations=546, status=2, elapsed=11.527s.
+lift seed 22: gap=1.8458629082503e-10, evaluations=265, status=2, elapsed=5.673s.
+lift seed 33: gap=1.40419056863306e-09, evaluations=1421, status=2, elapsed=27.011s.
+
+These are floating-point estimates, not interval-certified costs. Tight-tolerance reintegration, identity checks and grid checks are consistency evidence, not global optimization certificates.
+All position runs exhaust their budget; all lift runs stop by ftol. Observed position excess is 4.8–5.2%, not a proven lower bound on that model family.
+Figure: two panels only, full position paths with equal axes and independently integrated checkpoint histories. No magnification or distortion of the loop.
+The same functional and initial state are used by both autonomous models. The lifted network embeds in Theta_20^E by zero padding. The experiment does not establish A5 or test the n-to-infinity statement.

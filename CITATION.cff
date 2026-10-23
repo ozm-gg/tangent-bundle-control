@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "Please cite the accompanying manuscript when using these experiments."
+type: software
+title: "Tangent-bundle augmentation for neural optimal control: reproducibility package"
+authors:
+  - family-names: Sheremetev
+    given-names: D. S.
+  - family-names: Mokaev
+    given-names: T. N.
+abstract: >-
+  Planar minimum-effort steering with a proved position-only cost gap,
+  trained neural acceleration fields, numerical verification.
+keywords:
+  - optimal control
+  - neural ordinary differential equations
+  - tangent bundle
+  - reproducibility
+license: MIT

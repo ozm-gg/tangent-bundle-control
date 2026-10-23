@@ -1,0 +1,24 @@
+name: Verify saved experiment
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python code/planar_steering.py
+      - run: python code/xy_learning.py --summarize-only
+      - name: Assert verification outcomes
+        run: |
+          python - <<'PYCODE'
+          import json
+          from pathlib import Path
+          for path in Path('validation').glob('*.json'):
+              assert json.loads(path.read_text())['passed'], str(path)
+          PYCODE
